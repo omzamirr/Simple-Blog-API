@@ -5,6 +5,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 func GetPosts(w http.ResponseWriter, r *http.Request) {
@@ -53,9 +55,45 @@ func CreatePost(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
+func ReadPostById(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	idStr := strings.TrimPrefix(r.URL.Path, "/posts/")
+	strToInt, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	postID := readPostById(int(strToInt))
+
+	if postID == nil {
+		http.Error(w, "Post does not exist", http.StatusNotFound)
+		return
+	}
+
+	data, err := json.Marshal(postID)
+	if err != nil {
+		http.Error(w, "Could not create response", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+
+}
+
 func HandlePosts(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		GetPosts(w, r)
+		if r.URL.Path == "/posts" {
+			GetPosts(w, r)
+		} else {
+			ReadPostById(w, r)
+		}
 	} else if r.Method == "POST" {
 		CreatePost(w, r)
 	} else {
