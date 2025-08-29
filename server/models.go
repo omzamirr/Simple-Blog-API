@@ -7,19 +7,21 @@ type Post struct {
 	Title     string    `json:"title"`
 	Body      string    `json:"body"`
 	CreatedAt time.Time `json:"created_at"`
+	Author    string    `json:"author"`
 }
 
 var posts = make(map[int]*Post)
 
 var nextID int = 1
 
-func createPost(title string, body string) *Post {
+func createPost(title string, body string, author string) *Post {
 	currentId := nextID
 	p := Post{}
 	p.ID = currentId
 	p.Title = title
 	p.Body = body
 	p.CreatedAt = time.Now()
+	p.Author = author
 	nextID++
 
 	posts[currentId] = &p
@@ -27,7 +29,7 @@ func createPost(title string, body string) *Post {
 	return &p
 }
 
-func readallPosts() []*Post {
+func readAllPosts() []*Post {
 	var s []*Post
 
 	for _, value := range posts {
