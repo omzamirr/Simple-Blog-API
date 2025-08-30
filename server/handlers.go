@@ -87,16 +87,42 @@ func ReadPostById(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func DeletePost(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "DELETE" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	isID := strings.TrimPrefix(r.URL.Path, "/posts/")
+	toInt, err := strconv.ParseInt(isID, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	deletedID := deletePost(int(toInt))
+
+	if deletedID == nil {
+		http.Error(w, "Post not found", http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func HandlePosts(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
+	switch r.Method {
+	case "GET":
 		if r.URL.Path == "/posts" {
 			GetPosts(w, r)
 		} else {
 			ReadPostById(w, r)
 		}
-	} else if r.Method == "POST" {
+	case "POST":
 		CreatePost(w, r)
-	} else {
+	case "DELETE":
+		DeletePost(w, r)
+	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
