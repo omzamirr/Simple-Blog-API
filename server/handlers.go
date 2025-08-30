@@ -110,6 +110,49 @@ func DeletePost(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func UpdatePost(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "PUT" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	upID := strings.TrimPrefix(r.URL.Path, "/posts/")
+	upToInt, err := strconv.ParseInt(upID, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	data, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Could not read request body", http.StatusBadRequest)
+		return
+	}
+
+	var post Post
+	err = json.Unmarshal(data, &post)
+	if err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	updatedPost := updatePost(int(upToInt), post.Body, post.Title)
+	if updatedPost == nil {
+		http.Error(w, "Post not found", http.StatusNotFound)
+		return
+	}
+
+	data, err = json.Marshal(updatedPost)
+	if err != nil {
+		http.Error(w, "Could not create response", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+}
+
 func HandlePosts(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
@@ -122,6 +165,8 @@ func HandlePosts(w http.ResponseWriter, r *http.Request) {
 		CreatePost(w, r)
 	case "DELETE":
 		DeletePost(w, r)
+	case "PUT":
+		UpdatePost(w, r)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
